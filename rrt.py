@@ -31,12 +31,11 @@ class RRT():
 			
 			theta = math.atan2(rnd[1] - nearestNode.y, rnd[0] - nearestNode.x)
 
-			newNode = copy.deepcopy(nearestNode)
-			newNode.x += self.expandDist * math.cos(theta)
-			newNode.y += self.expandDist * math.sin(theta)
-			newNode.parent = neareastIndex
+			xNew = nearestNode.x + self.expandDist * math.cos(theta)
+			yNew = nearestNode.y + self.expandDist * math.sin(theta)
 
-			if self.doesNotCollide(newNode.x, newNode.y):
+			if self.doesNotCollide(xNew, yNew):
+				newNode = Node(xNew, yNew, neareastIndex)
 				leftx = newNode.x - self.goal.x
 				lefty = newNode.y - self.goal.y
 
