@@ -1,4 +1,5 @@
 from rrt import RRT
+from generator import Generator
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
@@ -13,18 +14,20 @@ if __name__ == "__main__":
 	start = [X, Y]
 	end = [gX, gY]
 
-	obstacleList = [(5, 5, 2, 2), (7, 7, 1, 1)] 
+	generator = Generator(n)
+	obstacleList =  generator.generateRect()
 
-	expandDist = 0.20
-	goalSample = 0.7
+	expandDist = 1.3
+	goalSample = 0.2
 
 	rrt = RRT(start, end, obstacleList, expandDist, goalSample)
 	xPath, yPath, xPlot, yPlot = rrt.planner()
 
 	fig1 = plt.figure()
 	ax1 = fig1.add_subplot(111, aspect='equal')
-	ax1.add_patch(patches.Rectangle((4,4),2,2))
-	ax1.add_patch(patches.Rectangle((6.5,6.5),1,1))
-	plt.plot(xPlot, yPlot)
-	plt.plot(xPath, yPath, color='black')
+	for (ox, oy, sx, sy) in obstacleList:
+		ax1.add_patch(patches.Rectangle((ox - sx/2.0, oy - sy/2.0), sx, sy, color='black'))
+
+	plt.plot(xPath, yPath)
+	# plt.scatter(xPlot, yPlot, marker='^', color='red')
 	plt.show()
