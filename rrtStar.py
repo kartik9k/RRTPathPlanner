@@ -39,8 +39,9 @@ class RRT():
 				newNode = Node(xNew, yNew, neareastIndex, nearestNode.cost + 1)
 				
 				nearInd = self.nearIndex(newNode)
-				possibleConnections = self.checkConnection(newNode, nearIndex)
-
+				newNode = self.getConnection(newNode, nearIndex)
+				self.nodeList.append(newNode)
+				
 				leftx = newNode.x - self.goal.x
 				lefty = newNode.y - self.goal.y
 
@@ -98,12 +99,41 @@ class RRT():
 
 		return nearInd
 
-	def checkConnection(self,newNode, nearIndex):
+	def getConnection(self,newNode, nearIndex):
 		if len(nearIndex) == 0:
 			return newNode
 
 		distance = []
-		for ind in nearIndex:
+		ind = []
+		for i in nearIndex:
 			dx = newNode.x - self.nodeList[ind].x
 			dy = newNode.y - self.nodeList[ind].y
-			dist = dx ** 2 + dy ** 2
+			d = dx ** 2 + dy ** 2
+			if self.isConnectionPossible(self.nodeList[i], dx, dy):
+				distance.append(self.nodeList[i].cost + d)
+				ind.append(nearIndex.index(i))
+
+		if len(distance) == 0:
+			return newNode
+
+		minCost = min(distance)
+		minInd = ind[distance.index(min(distance))]
+
+		newNode.cost = minCost
+		newNode.parent = minInd
+
+		return newNode
+
+	def isConnectionPossible(node, dx, dy):
+		d = dx ** 2 + dy ** 2
+		iterations = int(d/self.expandDist)
+
+		xCurr = node.x
+		yCurr = node.y
+		for i in range(iterations):
+			xCurr += self.expandDist * math.cos(theta)
+			yCurr += self.expandDist * math.sin(theta)
+			if not doesNotCollide(xCurr, yCurr):
+				return False
+
+		return True
