@@ -4,9 +4,11 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
 if __name__ == "__main__":
+	print "Preferable goal position ([95-100, 95-100])"
 	gX = int(input("Enter X coordinate of the goal: "))
 	gY = int(input("Enter Y coordinate of the goal: "))
 
+	print "Preferable goal position ([0-5, 0-5])"
 	X = int(input("Enter X coordinate of the initial position: "))
 	Y = int(input("Enter Y coordinate of the initial position: "))
 	n = int(input("Enter the number of obstacles: "))
@@ -29,5 +31,5 @@ if __name__ == "__main__":
 		ax1.add_patch(patches.Rectangle((ox - sx/2.0, oy - sy/2.0), sx, sy, color='black'))
 
 	plt.plot(xPath, yPath)
-	# plt.scatter(xPlot, yPlot, marker='^', color='red')
+	plt.scatter(xPlot, yPlot, marker='^', color='red')
 	plt.show()
