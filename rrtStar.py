@@ -9,19 +9,22 @@ class Node():
 		self.cost = cost
 		self.parent = par
 
-class RRT():
-	def __init__(self, start, goal, obstacleList, expandDist, goalSampleRate):
+class RRTStar():
+	def __init__(self, start, goal, obstacleList, expandDist, goalSampleRate, maxIter = 3000):
 		self.start = Node(start[0], start[1])
 		self.goal = Node(goal[0], goal[1])
 		self.obstacleList = obstacleList
 		self.expandDist = expandDist
 		self.goalSampleRate = goalSampleRate
+		self.maxIter = maxIter
 
 	def planner(self):
-		self.nodeList = [self.start]
 		xPlot = []
 		yPlot = []
-		while True and self.goal not in self.nodeList:
+		self.nodeList = [self.start]
+		i = 0
+		while True and self.goal not in self.nodeList and i <= self.maxIter:
+			i += 1
 			if random.random() > self.goalSampleRate:
 				rnd = [self.goal.x, self.goal.y]
 			else:
@@ -36,33 +39,35 @@ class RRT():
 			yNew = nearestNode.y + self.expandDist * math.sin(theta)
 
 			if self.doesNotCollide(xNew, yNew):
-				newNode = Node(xNew, yNew, neareastIndex, nearestNode.cost + 1)
+				xPlot.append(xNew)
+				yPlot.append(yNew)
 				
+				newNode = Node(xNew, yNew, neareastIndex, nearestNode.cost + self.expandDist)
 				nearInd = self.nearIndex(newNode)
-				newNode = self.getConnection(newNode, nearIndex)
+				newNode = self.getConnection(newNode, nearInd)
 				self.nodeList.append(newNode)
-				
-				leftx = newNode.x - self.goal.x
-				lefty = newNode.y - self.goal.y
-
-				xPlot.append(newNode.x)
-				yPlot.append(newNode.y)
-
-				if (math.sqrt(leftx * leftx + lefty * lefty) <= self.expandDist):
-					self.goal.parent = neareastIndex
-					self.nodeList.append(self.goal)
-					print("Goal Reached :D")
-				
-				else:
-					self.nodeList.append(newNode)
-			
+				self.rewire(newNode, nearInd)			
 			else:
 				continue
+
+		remDist = []
+		for node in self.nodeList:
+			remDist.append(math.sqrt((node.x - self.goal.x) ** 2 + (node.y - self.goal.y) ** 2))
+
+		possibleGoalConnections = [remDist.index(i) for i in remDist if i <= self.expandDist]
+		if (len(possibleGoalConnections) == 0):
+			return None, None, None, None
+
+		lastInd = None
+		minCost = min([self.nodeList[i].cost for i in possibleGoalConnections])
+		for i in possibleGoalConnections:
+			if self.nodeList[i].cost == minCost:
+				lastInd = i
+				break
 
 		pathX = []
 		pathY = []
 
-		lastInd = len(self.nodeList) - 1
 		while self.nodeList[lastInd].parent != None:
 			node = self.nodeList[lastInd]
 			pathX.append(node.x)
@@ -71,8 +76,24 @@ class RRT():
 
 		pathX.append(self.start.x)
 		pathY.append(self.start.y)
-		
+
 		return pathX, pathY, xPlot, yPlot
+
+	def rewire(self, newNode, nearInd):
+		for ind in nearInd:
+			curNode = self.nodeList[ind]
+
+			dx = newNode.x - curNode.x
+			dy = newNode.y - curNode.y
+
+			dist = math.sqrt(dx ** 2 + dy ** 2)
+			curCost = newNode.cost + dist
+
+			if curNode.cost > curCost:
+				if self.isConnectionPossible(newNode, dx, dy):
+					curNode.parent = len(self.nodeList) - 1
+					curNode.cost = curCost
+
 
 	def getNearestIndex(self, rnd):
 		distances = []
@@ -91,7 +112,8 @@ class RRT():
 		for node in self.nodeList:
 			distances.append(math.sqrt((node.x - newNode.x) ** 2 + (node.y - newNode.y) ** 2))
 
-		r = 3.0 * math.sqrt((math.log(len(self.nodeList)))/ len(self.nodeList))
+		nnode = len(self.nodeList)
+		r = 50.0 * math.sqrt((math.log(nnode) / nnode))
 		nearInd = []
 		for i in range(len(distances)):
 			if distances[i] <= r:
@@ -104,36 +126,36 @@ class RRT():
 			return newNode
 
 		distance = []
-		ind = []
 		for i in nearIndex:
-			dx = newNode.x - self.nodeList[ind].x
-			dy = newNode.y - self.nodeList[ind].y
-			d = dx ** 2 + dy ** 2
+			dx = newNode.x - self.nodeList[i].x
+			dy = newNode.y - self.nodeList[i].y
+			d = math.sqrt(dx ** 2 + dy ** 2)
 			if self.isConnectionPossible(self.nodeList[i], dx, dy):
 				distance.append(self.nodeList[i].cost + d)
-				ind.append(nearIndex.index(i))
-
-		if len(distance) == 0:
-			return newNode
+			else:
+				distance.append(10000)
 
 		minCost = min(distance)
-		minInd = ind[distance.index(min(distance))]
+		minInd = nearIndex[distance.index(minCost)]
+
+		if (minCost == 10000):
+			return newNode
 
 		newNode.cost = minCost
 		newNode.parent = minInd
-
 		return newNode
 
-	def isConnectionPossible(node, dx, dy):
-		d = dx ** 2 + dy ** 2
+	def isConnectionPossible(self, node, dx, dy):
+		d = math.sqrt(dx ** 2 + dy ** 2)
 		iterations = int(d/self.expandDist)
 
+		theta = math.atan2(dy, dx)
 		xCurr = node.x
 		yCurr = node.y
 		for i in range(iterations):
 			xCurr += self.expandDist * math.cos(theta)
 			yCurr += self.expandDist * math.sin(theta)
-			if not doesNotCollide(xCurr, yCurr):
+			if not self.doesNotCollide(xCurr, yCurr):
 				return False
 
 		return True
